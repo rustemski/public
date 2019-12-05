@@ -15,7 +15,8 @@ This means that:
 
 There was a vote. There are people who voted positively, negatively, and randomly.
 Figure out if the final answer depends on random people or not.
-If it does print '?'
+If it does return '?', otherwise it should be '+', '-', or '0'.
+Previous characters stand for outcome of the vote: positive/negative/or draw.
 
 Write a function, `Nauuo`, that returns final result of voting.
 
