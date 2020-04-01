@@ -4,116 +4,139 @@ This program analyses a go source file and displays in standard output the impor
 
 ### By default:
 
-- NO imports and NO built-in functions are allowed.
-- NO casting is allowed either.
-- Only functions declared inside the source file are allowed.
-- All array types are allowed
-- Loops are allowed
+- Allowed
+  - All functions declared inside the source file are allowed
+  - Array of all types are allowed
+  - Loops are allowed
+  - Relative imports are allowed
+- Disallowed
+  - NO imports are allowed
+  - NO built-in functions are allowed.
+  - NO casting is allowed
 
 ### Flags
 
-- Two flags are defined:
-  - `--cast` allows casting to every built-in type.
-  - `--no-for` prohibits the use of `for` loops in the program or function.
-  - `--no-array`:
-    - Prohibits all array types if no types are specified after the flag.
-      Ex.
-      ```console
-	_$ ./rc main.go fmt.* github.com/01-edu/z01.PrintRune len --no-array
-      ```
-      All array type in main.go will cause an error message.
-    - Prohibits only the types specified after the flag
-      Ex.
-      ```console
-	_$ ./rc main.go fmt.* github.com/01-edu/z01.PrintRune len --no-array rune string
-      ```
-      Only array from the type rune and string are prohibit. All other array from built-in types are allowed
+- Defined flags:
+  - `-h` for help
+  - `-cast` allows casting to every built-in type.
+  - `-no-for` prohibits the use of `for` loops in the program or function.
+  - `-allow-builtin` allows all builtin functions and casting to builtin types
+  - `-no-arrays` disallows the use of all array types
+  - `-no-these-arrays=type1,type2`: disallows the arrays of type1 and type2
+  - `-no-relative-imports`: disallows the use of relative imports
 
 ### Arguments:
 
-- First Argument:
+- Flags must be passed passed first, before any other argument
 
-The program must be executed passing the go source file to be analyze as the first argument
+- After the flags the first argument must be the file to be analysed
 
-- The remaining argument (from 2 to ...):
+- The remaining arguments represent the allowed functions
+  - Allowed imports and functions from a package
+    - `<package>.*` for full imports (all functions from that package are allowed)
+    - `<package>`.`<function>` for partial imports (only the function is allowed)
+    - `<package>`.`<function>#amount` the function is only allowed to be used `amount` number of times
+    - Ex: `fmt.*` (all functions from `fmt` are allowed), `github.com/01-edu/z01.PrintRune` (only `z01.PrintRune` is allowed), `fmt.Println#2` (fmt.Println can only be used 2 times or less)
+  - Allowed built-in functions
+    - Use the name of the built-in function
+    - It is posible to limit the number of calls of a functions like with the imports using the '#' character
+    - Ex: `make`, `append`, `len`, `print#2`.
+  - Allowed casting
+    - by using the type of casting, ex: for allowing `string` casting, use `string`
+    - Or use the flag `-cast`, to allow every type of casting
+  - Import relative packages
+    - Use the relative path
+    - Ex: `../piscine`, `..`, `.`
+  - Disallow `for` loops
+    - Use the flags `-no-for`.
+  - Disallow all array types.
+    - Use `-no-arrays`
+  - Unallow literals
+    - Use the flag `--no-lit="{PATTERN}"`
+    - Note: `"{PATTERN}"` must be a valid Regular Expression.
+      - ex:
+        ```console
+        _$ rc -no-arrays --no-lit=[b-yB-Y] main.go fmt.* github.com/01-edu/z01.PrintRune len 
+        ```
+### Example:
 
-   Can be (without any particular order):
+- To allow the import of the whole `fmt` package, `z01.PrintRune` and the built-in functions `len` for the file `main.go`
 
-   - Allowed imports and functions from a package
-     - `<package>.*` for full imports (all functions from that package are allowed)
-     - `<package>`.`<function>` for partial imports (only the function is allowed)
-     - `<package>`.`<function>#amout` for certain amounts (only certain amount os a function is allowed)
-     - Ex: `fmt.*` (all functions from `fmt` are allowed), `github.com/01-edu/z01.PrintRune` (only `z01.PrintRune` is allowed), `append#2` (the only amount of `append`'s allowed is 2)
-   - Allowed built-in functions
-     - Use the name of the built-in function
-     - Ex: `make`, `append`, `len`.
-      - Allowed casting
-      - by using the type of casting, ex: for allowing `string` casting, use `string`
-      - Or use the flag `--cast`, to allow every type of casting
-
-   - Import relative packages
-     - Use the relative path
-     - Ex: `../piscine`, `..`, `.`
-
-   - Unallow for loops
-     - Use the flags `--no-for`.
-     - Note: remember to use it before the `--no-array` flag.
-       - ex:
-       ```console
-       _$ ./rc main.go fmt.* github.com/01-edu/z01.PrintRune len --no-array <...> --no-for
-       ```
-       the last line produces undesired behaviors.
-   - Unallow literals
-     - Use the flag `--no-lit="{PATTERN}"`
-     - Note: `"{PATTERN}"` must be a valid RegExp.
-       - ex:
-       ```console
-       _$ ./rc main.go fmt.* github.com/01-edu/z01.PrintRune len --no-array --no-lit=[b-yB-Y]
-       ```
-- Optional lasts arguments
-  - The flag `--no-array` must be given as the last argument or to signal that all the arguments after are unallowed array types 
-### Usage:
-
-- To allow the import of the whole `fmt` package, `z01.PrintRune` and the built-in functions len in the file `main.go`
-
-   The imports must be writen exactly the way are writen inside the source code, example:
+   Note: The imports must be writen exactly the way they are writen inside the source code, example:
 
 ```console
-   _$ ./rc main.go fmt.* github.com/01-edu/z01.PrintRune len
+    _$ rc main.go fmt.* github.com/01-edu/z01.PrintRune len
 ```
-- More examples:
 
-- import "fmt" is allowed by executing
-   ```console
-   _$ ./rc sourcefile.go fmt.*
-   ```
+- Import "fmt" is allowed by executing
+    ```console
+    _$ rc sourcefile.go fmt.*
+    ```
 
-   - import "go/parser" is allowed by executing
-   ```console
-   _$ ./rc sourcefile.go go/parser.*
-   ```
+- Import "go/parser" is allowed by executing
+    ```console
+    _$ rc sourcefile.go go/parser.*
+    ```
 
-   - import "github.com/01-edu/z01" is allowed by executing
-   ```console
-   ./rc sourcefile.go github.com/01-edu/z01.*
-   ```
+- Import "github.com/01-edu/z01" is allowed by executing
+    ```console
+    _$ rc sourcefile.go github.com/01-edu/z01.*
+    ```
 
-   - import "../../../all/tests/go/solutions" is allowed by executing
-   ```console
-   _$ ./rc sourcefile.go ../../../all/tests/go/solutions
-   ```
-   (no `.*` is needed, all the functions from this relative package are allowed)
+- Allow all type of casting
 
-- allow all type of casting
+    ```console
+    _$ rc -cast sourcefile.go fmt.* github.com/01-edu/z01 os.* strconv.* make len append
+    ```
+  - this will allow all type of casting in the file sourcefile.go
 
-   ```console
-   _$ ./rc sourcefile.go ../../../all/tests/go/solutions/ztail/ztail.go fmt.* github.com/01-edu/z01 os.* strconv.* make len append --cast
-   ```
-   - this will allow all type of casting in the file ztail.go
+- Disallow the use of the slices of type `string` and `int`
 
-- to allow just one type of casting
+    ```console
+    _$ rc -no-these-arrays=string,int sourcefile.go
+    ```
 
-   ```console
-   _$ ./rc sourcefile.go ../../../all/tests/go/solutions/ztail/ztail.go fmt.* github.com/01-edu/z01 os.* strconv.* make len append rune
-   ```
-   - this will allow `rune`, but not `int8`, ..., `string`, `float32`, ...
+- To allow just one type of casting
+
+    ```console
+    _$ rc sourcefile.go fmt.* github.com/01-edu/z01 os.* strconv.* make len append rune
+    ```
+  - this will allow the casting to `rune`, but not `int8`, ..., `string`, `float32`, ...
+
+### How to read the error message
+
+Let us look to an example snipped of code, let us imagine this code in a file called `main.go`:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	for _, v := range "abcdefghijklmnopqrstuvwxyz" {
+		fmt.Println(v)
+	}
+	fmt.Println()
+}
+```
+
+Now let us run the `rc` and understand the message
+
+```console
+_$ rc main.go github.com/01-edu/z01.PrintRune
+Parsing:
+	Ok
+Cheating:
+	TYPE:             	NAME:      	LOCATION:
+	illegal-import    	fmt        	main.go:3:8
+	illegal-access    	fmt.Println	main.go:7:3
+	illegal-access    	fmt.Println	main.go:10:2
+	illegal-definition	main       	main.go:5:1
+```
+
+The important part is printed after the `Cheating` tag:
+- The import of of the package `fmt` is not allowed
+- In go the dot (.) is also known as the access operator for that reason the use of fmt.Println is shown as an illegal-access
+- Finally the main function is shown as illegal-definition because the function is using unallowed functions that does not mean that the function can not be defined it just mean that the definition of the function must be changed to not use disallowed functions.
+- Notice that the third column of the output with the tag "LOCATION:" show the location in the following way filepath:line:column
+This mean that you have to substitute the illegal function for ones that are allowed or write your own function with allowed functions
